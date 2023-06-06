@@ -1,0 +1,11 @@
+{
+  "name": "bulls_and_cows",
+  "version": "1.0.0",
+  "description": "Bulls and Cows game for Telegram",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Vitali K",
+  "license": "ISC"
+}
