@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - 4566:4566
+    environment:
+      - DEBUG=${DEBUG-}
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - PROVIDER_OVERRIDE_LAMBDA=asf
+    volumes:
+      - ./localstack:/etc/localstack/init/ready.d
+      - /var/run/docker.sock:/var/run/docker.sock
