@@ -13,3 +13,9 @@ pip3 install awscli-local
 ```
 npm i
 ```
+
+3. Install `ngrok`:
+
+```
+brew install ngrok/ngrok/ngrok
+```

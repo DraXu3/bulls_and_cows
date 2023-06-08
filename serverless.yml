@@ -2,7 +2,10 @@ service: bulls-and-cows
 
 plugins:
   - serverless-deployment-bucket
+  - serverless-dotenv-plugin
   - serverless-localstack
+
+useDotenv: true
 
 provider:
   deploymentBucket:
@@ -27,10 +30,109 @@ custom:
       mountCode: true
 
 functions:
-  webhook:
-    handler: ./src/webhook.handler
+  appLambda:
+    handler: ./src/app/index.handler
+    role: AppLambdaRole
+    environment:
+      TELEGRAM_BOT_ID: ${env:TELEGRAM_BOT_ID}
+      ATTEMPTS_TABLE: !Ref AttemptsTable
+      SCORE_TABLE: !Ref ScoreTable
+      SESSIONS_TABLE: !Ref SessionsTable
+      SETTINGS_TABLE: !Ref SettingsTable
     events:
       - http:
           path: /webhook
-          method: get
+          method: post
           cors: true
+
+resources:
+  Resources:
+    AppLambdaRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: AppLambdaRole
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: lambda.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: DynamoDBAccess
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - dynamodb:Query
+                    - dynamodb:GetItem
+                    - dynamodb:PutItem
+                    - dynamodb:UpdateItem
+                    - dynamodb:DeleteItem
+                  Resource:
+                    - "Fn::GetAtt": [SettingsTable, Arn]
+                    - "Fn::GetAtt": [SessionsTable, Arn]
+                    - "Fn::GetAtt": [AttemptsTable, Arn]
+                    - "Fn::GetAtt": [ScoreTable, Arn]
+    SettingsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: bulls-and-cows-settings
+        AttributeDefinitions:
+          - AttributeName: chat_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: chat_id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    SessionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: bulls-and-cows-sessions
+        AttributeDefinitions:
+          - AttributeName: chat_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: chat_id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    AttemptsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: bulls-and-cows-attempts
+        AttributeDefinitions:
+          - AttributeName: chat_id
+            AttributeType: S
+          - AttributeName: user_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: chat_id
+            KeyType: HASH
+          - AttributeName: user_id
+            KeyType: SORT
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    ScoreTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: bulls-and-cows-score
+        AttributeDefinitions:
+          - AttributeName: chat_id
+            AttributeType: S
+          - AttributeName: user_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: chat_id
+            KeyType: HASH
+          - AttributeName: user_id
+            KeyType: SORT
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+ 
