@@ -19,3 +19,9 @@ npm i
 ```
 brew install ngrok/ngrok/ngrok
 ```
+
+4. Install `jq`:
+
+```
+brew install jq
+```

@@ -39,6 +39,8 @@ functions:
       SCORE_TABLE: !Ref ScoreTable
       SESSIONS_TABLE: !Ref SessionsTable
       SETTINGS_TABLE: !Ref SettingsTable
+      WORDS_TABLE: !Ref WordsTable
+      NODE_ENV: ${opt:stage, 'local'}
     events:
       - http:
           path: /webhook
@@ -75,6 +77,7 @@ resources:
                     - "Fn::GetAtt": [SessionsTable, Arn]
                     - "Fn::GetAtt": [AttemptsTable, Arn]
                     - "Fn::GetAtt": [ScoreTable, Arn]
+                    - "Fn::GetAtt": [WordsTable, Arn]
     SettingsTable:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -108,12 +111,12 @@ resources:
         AttributeDefinitions:
           - AttributeName: chat_id
             AttributeType: S
-          - AttributeName: user_id
+          - AttributeName: player_id
             AttributeType: S
         KeySchema:
           - AttributeName: chat_id
             KeyType: HASH
-          - AttributeName: user_id
+          - AttributeName: player_id
             KeyType: SORT
         ProvisionedThroughput:
           ReadCapacityUnits: 1
@@ -125,12 +128,29 @@ resources:
         AttributeDefinitions:
           - AttributeName: chat_id
             AttributeType: S
-          - AttributeName: user_id
+          - AttributeName: player_id
             AttributeType: S
         KeySchema:
           - AttributeName: chat_id
             KeyType: HASH
-          - AttributeName: user_id
+          - AttributeName: player_id
+            KeyType: SORT
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    WordsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: bulls-and-cows-words
+        AttributeDefinitions:
+          - AttributeName: word_length
+            AttributeType: N
+          - AttributeName: word_position
+            AttributeType: N
+        KeySchema:
+          - AttributeName: word_length
+            KeyType: HASH
+          - AttributeName: word_position
             KeyType: SORT
         ProvisionedThroughput:
           ReadCapacityUnits: 1

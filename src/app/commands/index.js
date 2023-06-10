@@ -1,7 +1,9 @@
-const { startNewGame } = require('./startNewGame');
+const { start } = require('./start');
+const { stop } = require('./stop');
 
 const commands = {
-  '/new': startNewGame,
+  '/start': start,
+  '/stop': stop,
 };
 
 module.exports = {
