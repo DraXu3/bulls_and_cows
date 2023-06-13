@@ -1,4 +1,4 @@
-# Bulls and Cows
+# Bulls and Cows 🐮
 
 This is a Telegram bot which plays [Bulls and Cows](https://en.wikipedia.org/wiki/Bulls_and_Cows) game.
 
@@ -80,3 +80,9 @@ To set a webhook and connect the local bot with Telegram use the following comma
 ```
 npm run local:connect
 ```
+## Roadmap
+
+1. Add ETL for words dictionary
+2. Add managed game settings
+3. Add localization
+4. Add tests and linters :D
