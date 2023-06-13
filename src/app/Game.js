@@ -93,7 +93,7 @@ class Game {
     const chatId = `${message.chat.id}`;
     const playerId = `${message.from.id}`;
 
-    const command = new GetItemCommand({
+    let command = new GetItemCommand({
       TableName: scoreTable,
       Key: {
         chat_id: { S: chatId },
@@ -102,15 +102,15 @@ class Game {
       AttributesToGet: ['score'],
     });
 
-    data = await this.dynamoDBClient.send(command);
-    const userScore = parseInt(data.Item?.score?.N ?? 0, 10);
+    const data = await this.dynamoDBClient.send(command);
+    const userScore = parseInt(data.Item?.score?.N ?? 0, 10) + 1;
 
     command = new PutItemCommand({
       TableName: scoreTable,
       Item: {
         chat_id: { S: chatId },
         player_id: { S: playerId },
-        score: { N: userScore + 1 },
+        score: { N: userScore },
       },
     });
 
@@ -193,6 +193,7 @@ class Game {
 
     if (score.bulls === sessionWord.length) {
       await this.telegramClient.reply(message, `Congratulations, you won!`);
+      await this.updatePlayerScore(message);
       await stopGame(message, this, { noOutput: true });
       return;
     }
