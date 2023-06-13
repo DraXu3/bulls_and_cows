@@ -4,7 +4,10 @@
   "description": "Bulls and Cows game for Telegram",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "local:connect": "./scripts/connect_bot.sh",
+    "local:deploy": "sls deploy --stage local",
+    "local:seed": "./scripts/seed_words.sh",
+    "localstack": "docker-compose up"
   },
   "author": "Vitali K",
   "license": "ISC",
