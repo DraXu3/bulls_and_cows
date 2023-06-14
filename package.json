@@ -1,7 +1,7 @@
 {
   "name": "bulls_and_cows",
   "version": "1.0.0",
-  "description": "Bulls and Cows game for Telegram",
+  "description": "Bulls and Cows - Telegram game bot",
   "main": "index.js",
   "scripts": {
     "local:connect": "./scripts/connect_bot.sh",
@@ -9,7 +9,7 @@
     "local:seed": "./scripts/seed_words.sh",
     "localstack": "docker-compose up"
   },
-  "author": "Vitali K",
+  "author": "DraXu3",
   "license": "ISC",
   "devDependencies": {
     "serverless": "^3.32.2",

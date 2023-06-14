@@ -1,4 +1,4 @@
-const { GetItemCommand } = require("@aws-sdk/client-dynamodb");
+const { GetItemCommand } = require('@aws-sdk/client-dynamodb');
 
 const scoreTable = process.env['SCORE_TABLE'];
 

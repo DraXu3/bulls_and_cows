@@ -1,4 +1,4 @@
-const { PutItemCommand, ScanCommand } = require("@aws-sdk/client-dynamodb");
+const { PutItemCommand, ScanCommand } = require('@aws-sdk/client-dynamodb');
 
 const { DEFAULT_MAX_ATTEMPTS, DEFAULT_WORD_LENGTH } = require('../config');
 const { stop: stopActiveGame } = require('./stop');

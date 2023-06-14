@@ -2,7 +2,7 @@ const {
   BatchWriteItemCommand, 
   ScanCommand, 
   DeleteItemCommand, 
-} = require("@aws-sdk/client-dynamodb");
+} = require('@aws-sdk/client-dynamodb');
 
 const attemptsTable = process.env['ATTEMPTS_TABLE'];
 const sessionsTable = process.env['SESSIONS_TABLE'];

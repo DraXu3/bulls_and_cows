@@ -1,4 +1,4 @@
-const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 
 const { commands } = require('./commands');
 const { Game } = require('./Game');
