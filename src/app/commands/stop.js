@@ -18,16 +18,14 @@ const stop = async (message, game, config = {}) => {
     return;
   }
 
-  let command = new DeleteItemCommand({
+  const deleteGameSessionCommand = new DeleteItemCommand({
     TableName: sessionsTable,
     Key: {
       chat_id: { S: chatId },
     },
   });
 
-  await game.dynamoDBClient.send(command);
-
-  command = new ScanCommand({
+  const scanSessionAttemptsCommand = new ScanCommand({
     TableName: attemptsTable,
     FilterExpression: 'chat_id = :chat_id',
     ExpressionAttributeValues: {
@@ -35,12 +33,16 @@ const stop = async (message, game, config = {}) => {
     },
   });
 
-  const data = await game.dynamoDBClient.send(command);
-  const deleteRequests = (data.Items ?? []).map(({ player_id }) => ({
+  const [sessionAttemptsData, _] = await Promise.all([
+    game.dynamoDBClient.send(scanSessionAttemptsCommand),
+    game.dynamoDBClient.send(deleteGameSessionCommand),
+  ]);
+
+  const deleteRequests = (sessionAttemptsData.Items ?? []).map(({ player_id: playerId }) => ({
     DeleteRequest: {
       Key: {
         chat_id: { 'S': chatId },
-        player_id: { 'S': player_id.S },
+        player_id: { 'S': playerId.S },
       },
     },
   }));

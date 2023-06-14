@@ -1,7 +1,7 @@
-const { GetItemCommand, PutItemCommand } = require("@aws-sdk/client-dynamodb");
+const { GetItemCommand, UpdateItemCommand } = require("@aws-sdk/client-dynamodb");
 
 const { stop: stopGame } = require('./commands/stop');
-const { DEFAULT_MAX_ATTEMPTS } = require('./config');
+const { DEFAULT_MAX_ATTEMPTS, DEFAULT_WORD_LENGTH } = require('./config');
 
 const attemptsTable = process.env['ATTEMPTS_TABLE'];
 const sessionsTable = process.env['SESSIONS_TABLE'];
@@ -33,7 +33,7 @@ class Game {
     const chatId = `${message.chat.id}`;
     const playerId = `${message.from.id}`;
 
-    let command = new GetItemCommand({
+    const getMaxAttemptsCommand = new GetItemCommand({
       TableName: settingsTable,
       Key: {
         chat_id: { S: chatId },
@@ -41,10 +41,7 @@ class Game {
       AttributesToGet: ['max_attempts'],
     });
 
-    let data = await this.dynamoDBClient.send(command);
-    const maxAttempts = parseInt(data.Item?.max_attempts?.N ?? DEFAULT_MAX_ATTEMPTS, 10);
-    
-    command = new GetItemCommand({
+    const getPlayerAttemptsCommand = new GetItemCommand({
       TableName: attemptsTable,
       Key: {
         chat_id: { S: chatId },
@@ -53,64 +50,49 @@ class Game {
       AttributesToGet: ['attempt'],
     });
 
-    data = await this.dynamoDBClient.send(command);
-    const userAttempt = parseInt(data.Item?.attempt?.N ?? 0, 10);
+    const [maxAttemptsData, playerAttemptsData] = await Promise.all([
+      this.dynamoDBClient.send(getMaxAttemptsCommand),
+      this.dynamoDBClient.send(getPlayerAttemptsCommand),
+    ]);
+
+    const maxAttempts = parseInt(maxAttemptsData.Item?.max_attempts?.N ?? DEFAULT_MAX_ATTEMPTS, 10);
+    const userAttempt = parseInt(playerAttemptsData.Item?.attempt?.N ?? 0, 10);
 
     return userAttempt < maxAttempts;
   }
 
   async updatePlayerAttempts(message) {
-    const chatId = `${message.chat.id}`;
-    const playerId = `${message.from.id}`;
-
-    let command = new GetItemCommand({
+    const command = new UpdateItemCommand({
       TableName: attemptsTable,
       Key: {
-        chat_id: { S: chatId },
-        player_id: { S: playerId },
+        chat_id: { S: `${message.chat.id}` },
+        player_id: { S: `${message.from.id}` },
       },
-      AttributesToGet: ['attempt'],
+      UpdateExpression: 'SET attempt = if_not_exists(attempt, :initial) + :increment',
+      ExpressionAttributeValues: {
+        ':initial': { N: 0 },
+        ':increment': { N: 1 },
+      },
+      ReturnValues: 'UPDATED_NEW',
     });
 
     const data = await this.dynamoDBClient.send(command);
-    const userAttempt = parseInt(data.Item?.attempt?.N ?? 0, 10) + 1;
-
-    command = new PutItemCommand({
-      TableName: attemptsTable,
-      Item: {
-        chat_id: { S: chatId },
-        player_id: { S: playerId },
-        attempt: { N: userAttempt },
-      },
-    });
-
-    await this.dynamoDBClient.send(command);
+    const userAttempt = parseInt(data.Attributes?.attempt?.N, 10);
 
     return DEFAULT_MAX_ATTEMPTS - userAttempt;
   }
 
   async updatePlayerScore(message) {
-    const chatId = `${message.chat.id}`;
-    const playerId = `${message.from.id}`;
-
-    let command = new GetItemCommand({
+    const command = new UpdateItemCommand({
       TableName: scoreTable,
       Key: {
-        chat_id: { S: chatId },
-        player_id: { S: playerId },
+        chat_id: { S: `${message.chat.id}` },
+        player_id: { S: `${message.from.id}` },
       },
-      AttributesToGet: ['score'],
-    });
-
-    const data = await this.dynamoDBClient.send(command);
-    const userScore = parseInt(data.Item?.score?.N ?? 0, 10) + 1;
-
-    command = new PutItemCommand({
-      TableName: scoreTable,
-      Item: {
-        chat_id: { S: chatId },
-        player_id: { S: playerId },
-        score: { N: userScore },
+      UpdateExpression: 'SET score = if_not_exists(score, :initial) + :increment',
+      ExpressionAttributeValues: {
+        ':initial': { N: 0 },
+        ':increment': { N: 1 },
       },
     });
 
@@ -150,19 +132,8 @@ class Game {
 
   async processAttempt(message) {
     const userWord = message.text.split(' ')[0].toLowerCase();
-    
-    let command = new GetItemCommand({
-      TableName: sessionsTable,
-      Key: {
-        chat_id: { S: `${message.chat.id}` },
-      },
-      AttributesToGet: ['word'],
-    });
-
-    const { Item: { word: { S: sessionWord } } } = await this.dynamoDBClient.send(command);
-
-    if (userWord.length !== sessionWord.length) {
-      await this.telegramClient.reply(message, `The word must be exactly ${sessionWord.length} letters length`);
+    if (userWord.length !== DEFAULT_WORD_LENGTH) {
+      await this.telegramClient.reply(message, `The word must be exactly ${DEFAULT_WORD_LENGTH} letters long`);
       return;
     }
 
@@ -171,6 +142,16 @@ class Game {
       await this.telegramClient.reply(message, `Sorry, no more attempts available`);
       return;
     }
+    
+    const command = new GetItemCommand({
+      TableName: sessionsTable,
+      Key: {
+        chat_id: { S: `${message.chat.id}` },
+      },
+      AttributesToGet: ['word'],
+    });
+
+    const { Item: { word: { S: sessionWord } } } = await this.dynamoDBClient.send(command);
 
     const sessionWordLetters = sessionWord.split('').reduce((letters, letter) => {
       if (!letters[letter]) {

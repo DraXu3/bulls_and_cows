@@ -17,6 +17,7 @@ const handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body);
+
     if (!body) {
       throw new Error('Validation error: missing required `body` in the event object');
     }
@@ -28,6 +29,7 @@ const handler = async (event) => {
     await game.process(body.message);
   } catch (err) {
     console.error(err);
+
     return {
       statusCode: 500,
       body: JSON.stringify(err)
